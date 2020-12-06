@@ -1,6 +1,6 @@
 #IREC_testlaunch_Payload_Avionics.py
 #-----------------------------------------------------------------------------------------------------
-#Program will record timestamped acceleration and gyroscope data to a csv file for post processing.
+#Program will record timestamped acceleration, temperature, and gyroscope data to a csv file for post processing.
 #Will run when power is connected to unit on boot sequence.
 #-----------------------------------------------------------------------------------------------------
 #Raspberry Pi 2B v1.1 terminal command: sudo python3 /home/pi/IREC_testlaunch_Payload_Avionics.py
@@ -30,17 +30,18 @@ ds3231 = adafruit_ds3231.DS3231(i2c)          #Define RTC module for timing
     
 with open('accel_test2.csv', 'w', newline='') as f:     #Create .csv file and define
     writing = csv.writer(f)                             #Open writing connection with csv file
-    writing.writerow(['Time', '--a_x--', '--a_y--', '--a_z--', '--g_x--', '--g_y--', '--g_z--'])    #Write Headers to each column
-    t = time.struct_time((2020,12,12,00,00,00,0,-1,-1))                                             #Set RTC Clock to 0 hr/min/s before starting data collection
-    ds3231.datetime = t
+    writing.writerow(['Time', 'Temperature', '--a_x--', '--a_y--', '--a_z--', '--g_x--', '--g_y--', '--g_z--'])    #Write Headers to each column
+    t = time.struct_time((2020,12,12,00,00,00,0,-1,-1))                                             #Set t to zero time for RCT initialization
+    ds3231.datetime = t                      #Set RTC Clock to 0 hr/min/s before starting data collection
     #print("Success, time is:",t)            #Used for debugging RTC clockset
     #print()                                 #Used for debugging RTC clockset
     
     for i in range(1,100):
         (a_x, a_y, a_z) = sox.acceleration   #Unpack LSM6DSOX acceleration data
         (g_x, g_y, g_z) = sox.gyro           #Unpack LSM6DSOX gyroscope data
+        t_RTC = ds3231.temperature           #Define t_RTC ad current RTC temperature
         t = ds3231.datetime                  #Define t as current RTC time
-        stmpdata = ("T+ {}:{:02}:{:02}".format(t.tm_hour, t.tm_min, t.tm_sec), a_x, a_y, a_z, g_x, g_y, g_z)  #Write following data into tuple: RTC time, accel x, accel y, accel z, gyro x, gyro y, gyro z
+        stmpdata = ("T+ {}:{:02}:{:02}".format(t.tm_hour, t.tm_min, t.tm_sec), t_RTC, a_x, a_y, a_z, g_x, g_y, g_z)  #Write following data into tuple: RTC time, accel x, accel y, accel z, gyro x, gyro y, gyro z
         writing.writerow(stmpdata)           #Write tuple into .csv file
         time.sleep(0.1)                      #Sleep
 f.close()                                    #Close .csv file to save data and end program
